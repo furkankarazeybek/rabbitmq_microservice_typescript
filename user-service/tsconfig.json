@@ -1,0 +1,13 @@
+{
+    "compilerOptions": {
+      "target": "ES6",                          // Hedef JavaScript sürümü
+      "module": "commonjs",                     // Modül sistemi
+      "strict": true,                           // Tüm sıkı denetimler etkin
+      "esModuleInterop": true,                  // ES Modül birlikte çalışabilirliğini etkin
+      "skipLibCheck": true,                     // Kütüphane dosyalarının denetimini atla
+      "forceConsistentCasingInFileNames": true, // Dosya isimlerinde büyük/küçük harf tutarlılığını zorunlu kıl
+      "outDir": "./dist",                       // Çıktı dosyalarının konumu
+      "types": ["node"]                         // Node.js tür tanımlarını dahil et
+    },
+    "include": ["src"]                          // Dahil edilecek dosya/dizinler
+  }
