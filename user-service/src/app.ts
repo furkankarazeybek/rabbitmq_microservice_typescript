@@ -13,16 +13,23 @@ async function connectRabbitMQ() {
     if (msg !== null) {
       const { param } = JSON.parse(msg.content.toString());
       const correlationId = msg.properties.correlationId;
+      
 
       if (param === 'getUserList') {
         const response = getUserList();
-        channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {
+        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(response)), {
           correlationId,
         });
-        console.log("mesaj aggregatora gider",msg.properties.replyTo)
-        
+
       }
 
+      else if (param === 'getRoleList') {
+        const response = getRoleList();
+        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(response)), {
+          correlationId,
+        });
+      
+    }
       channel.ack(msg);
     }
   });
@@ -30,6 +37,10 @@ async function connectRabbitMQ() {
 
 function getUserList() {
   return [{ id: 1, name: 'John Doe' }, { id: 2, name: 'Jane Doe' }];
+}
+
+function getRoleList() {
+  return [{ id: 1, role: 'Admin' }, { id: 2, role: 'User' }];
 }
 
 connectRabbitMQ();

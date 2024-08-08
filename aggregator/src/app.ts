@@ -1,67 +1,72 @@
 import amqp from 'amqplib';
+import routeConfig from "../route-config"
 
 const RABBITMQ_URL = 'amqp://localhost';
 
 let channel: amqp.Channel;
+const responseHandlers = new Map<string, (response: any) => void>();
+
 
 async function connectRabbitMQ() {
   const connection = await amqp.connect(RABBITMQ_URL);
   channel = await connection.createChannel();
-  channel.assertQueue('aggregator', { durable: false }); // aggretor isminde kuyruk oluşur . { durable: false }, kuyruğun kalıcı olmadığını ve RabbitMQ sunucusu kapandığında kaybolacağını belirtir.
-  channel.consume('aggregator', async (msg) => { // mesaj tüketim
-    if (msg !== null) {
-      const { param } = JSON.parse(msg.content.toString()); 
-      const correlationId = msg.properties.correlationId; // gelen mesajdaki corelation id yi alır
-      console.log("api gatewayden gelen corelation id", correlationId);
+  channel.assertQueue('api_gateway_request', { durable: false });
 
-      let response;
-      if (param === 'getUserList') {
-        response = await sendToService('user', { param });
-      } else if (param === 'getProductList') {
-        response = await sendToService('product', { param });
+  channel.consume('api_gateway_request', async (msg) => { 
+    if (msg !== null) {
+      const { param } = JSON.parse(msg.content.toString());
+      const correlationId = msg.properties.correlationId;
+
+      // routeConfig'te param'a karşılık gelen serviceName'i bulalım
+      const route = routeConfig.find((route:any) => route.actionName === param);
+
+      if (route) {
+        const response = await sendToService(route.serviceName, { param });
+        channel.sendToQueue(
+          'api_gateway', 
+          Buffer.from(JSON.stringify(response)), 
+          { correlationId }
+        );
       }
 
-      channel.sendToQueue(
-        msg.properties.replyTo, Buffer.from(JSON.stringify(response)), { // sendToService'ten dönen yanıtı aggregator'ın replyTo kuyruğuna gönderir. yani api-gateway'e gider
-        correlationId,
-      });
-      console.log("api-gatewaye yanıt döner",msg.properties.replyTo);
       channel.ack(msg);
     }
   });
 }
 
 async function sendToService(queue: string, message: object) {
-  const aggregator = await channel.assertQueue('', { exclusive: true }); //geçici yanıt kuyruğu
-  const correlationId = generateUuid(); 
+  return new Promise((resolve) => {
+    const correlationId = generateUuid();
+    // resolve fonksiyonunu correlationId ile birlikte responseHandlers Map'i eklenir
+    const deger = responseHandlers.set(correlationId, resolve);
 
-  return new Promise((resolve) => { // promise, yanıt alındığında çözümlenecek
-    channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { // mesajı göndereceği kuyruk göndericek queue = user veya product
+    channel.assertQueue('aggregator', { durable: false });
+
+    channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), {
       correlationId,
-      replyTo: aggregator.queue,
     });
 
-    console.log("queue(user veya product) kuyruğuna yanıt kuyruğu gönderilir reply to:", aggregator.queue);
-    console.log("agregatordan mesaj buraya gönderilir", queue);  // queue: user veya product
+    console.log("Mesaj buraya gönderildi:", queue);
 
-
-    
-
-    channel.consume( //gelen kuyruk yanıtını burdan alıyor
-      aggregator.queue,
+    channel.consume(
+      "aggregator",
       (msg) => {
-        if(msg == null) {
-            return;
-        }
-        if (msg.properties.correlationId === correlationId) {
-          resolve(JSON.parse(msg.content.toString())); // buffer mesajı çözümler jsona çevirir örneğin param: "getUserList"
-          channel.ack(msg);
+        if (msg !== null) {
+          const correlationId = msg.properties.correlationId;
+          const handler = responseHandlers.get(correlationId);
+
+          if (handler) { 
+            handler(JSON.parse(msg.content.toString()));  // Bu handler aslında resolve fonksiyonu. resolve çağırıldığında promise tamamlanmış oldu.
+            responseHandlers.delete(correlationId); // reponnseHandler isimli mapten correlationId'yi siliyoruz
+            channel.ack(msg);
+          }
         }
       },
       { noAck: false }
     );
   });
 }
+
 
 function generateUuid() {
   return Math.random().toString() + Math.random().toString() + Math.random().toString();

@@ -8,46 +8,44 @@ app.use(bodyParser.json());
 const RABBITMQ_URL = 'amqp://localhost';
 
 let channel: amqp.Channel;
-// rabbitmq bağlantısı
+const responseHandlers = new Map<string, (response: any) => void>();
+
+// RabbitMQ bağlantısı
 async function connectRabbitMQ() {
   const connection = await amqp.connect(RABBITMQ_URL);
   channel = await connection.createChannel();
+  await channel.assertQueue("api_gateway", { durable: false });
+
+  channel.consume("api_gateway", (msg) => {
+    if (msg !== null) {
+      const correlationId = msg.properties.correlationId;
+      const handler = responseHandlers.get(correlationId);
+      if (handler) {
+        handler(JSON.parse(msg.content.toString()));  // buffer veriyi alıp json parse ettikten sonra correlation id silinir
+        responseHandlers.delete(correlationId);
+        channel.ack(msg);
+      }
+    }
+  }, { noAck: false });
 }
-//post isteği
+
+// POST isteği
 app.post('/api', async (req, res) => {
   const { param } = req.body;
-  const correlationId = generateUuid(); // correlation id eşsiz olmalı, yanıt ile isteği eşleştirmek için kullanılır
-  const api_gateway = await channel.assertQueue('', { exclusive: true }); // exclusive: true yalnızca bu bağlantı tarafından kullanılabilir, yanıt gelirse bu kuyruğa gelicek
-
-  // channel.sendToQueue: aggregator adlı rabbitmq kuyruğuna mesaj gönderir
-  channel.sendToQueue(
-    'aggregator',
-    Buffer.from(JSON.stringify({ param })),  // rabbitmq ikili veri formatı kullanır gönderirken jsonu buffera 
-    { correlationId, replyTo: api_gateway.queue }  // agreegator' yanıtın geleceği yer : replyTo ve  correlationId gönderilir,  
-  );
-  console.log("Agreegatordan dönen response api-gatewaye",api_gateway.queue)
-
-
+  const correlationId = generateUuid();
   
-// channel.consume: responseQueue.queue kuyruğundan mesajları tüketir
-  channel.consume(
-    api_gateway.queue,
-    (msg) => { // gelen mesaj nesnesi : msg
-      if(msg == null) {
-          return ;
-      }
-      if (msg.properties.correlationId === correlationId) {  // yanıt corelationId  ile gönderilen correlationId eşit mi bakıyoruz
-        res.json(JSON.parse(msg.content.toString()));  // aggregatordan gelen yanıt response json olarak döner
-        channel.ack(msg); // Mesajın başarıyla işlendiğini RabbitMQ'ya bildirir ve kuyruktan kaldırır
-      }
-    },
-    
-    { noAck: false }  // rabbitmqya işlendiğinde onaylanması gerektiğini belirtir
+
+  responseHandlers.set(correlationId, (response) => {
+    res.json(response);
+  });
+
+
+  channel.sendToQueue(
+    'api_gateway_request',
+    Buffer.from(JSON.stringify({ param })),
+    { correlationId}
   );
-    console.log("Consume edilen Api-gateway kuyruğu",api_gateway.queue)
-
 });
-
 
 function generateUuid() {
   return Math.random().toString() + Math.random().toString() + Math.random().toString();

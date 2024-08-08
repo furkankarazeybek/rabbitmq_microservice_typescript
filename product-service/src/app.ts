@@ -16,7 +16,7 @@ async function connectRabbitMQ() {
 
       if (param === 'getProductList') {
         const response = getProductList();
-        channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {
+        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(response)), {
           correlationId,
         });
       }
