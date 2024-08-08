@@ -17,33 +17,34 @@ async function connectRabbitMQ() {
 app.post('/api', async (req, res) => {
   const { param } = req.body;
   const correlationId = generateUuid(); // correlation id eşsiz olmalı, yanıt ile isteği eşleştirmek için kullanılır
-  const responseQueue = await channel.assertQueue('', { exclusive: true }); // exclusive: true yalnızca bu bağlantı tarafından kullanılabilir, yanıt gelirse bu kuyruğa gelicek
+  const api_gateway = await channel.assertQueue('', { exclusive: true }); // exclusive: true yalnızca bu bağlantı tarafından kullanılabilir, yanıt gelirse bu kuyruğa gelicek
 
   // channel.sendToQueue: aggregator adlı rabbitmq kuyruğuna mesaj gönderir
   channel.sendToQueue(
     'aggregator',
     Buffer.from(JSON.stringify({ param })),  // rabbitmq ikili veri formatı kullanır gönderirken jsonu buffera 
-    { correlationId, replyTo: responseQueue.queue }  // agreegator'a correlationId gönderilir, yanıtın geleceği yer : replyTo 
+    { correlationId, replyTo: api_gateway.queue }  // agreegator' yanıtın geleceği yer : replyTo ve  correlationId gönderilir,  
   );
-  console.log("Aggregatora gönderilen",responseQueue.queue)
+  console.log("Agreegatordan dönen response api-gatewaye",api_gateway.queue)
 
 
   
 // channel.consume: responseQueue.queue kuyruğundan mesajları tüketir
   channel.consume(
-    responseQueue.queue,
+    api_gateway.queue,
     (msg) => { // gelen mesaj nesnesi : msg
       if(msg == null) {
           return ;
       }
       if (msg.properties.correlationId === correlationId) {  // yanıt corelationId  ile gönderilen correlationId eşit mi bakıyoruz
-        res.json(JSON.parse(msg.content.toString()));
+        res.json(JSON.parse(msg.content.toString()));  // aggregatordan gelen yanıt response json olarak döner
         channel.ack(msg); // Mesajın başarıyla işlendiğini RabbitMQ'ya bildirir ve kuyruktan kaldırır
       }
     },
     
     { noAck: false }  // rabbitmqya işlendiğinde onaylanması gerektiğini belirtir
   );
+    console.log("Consume edilen Api-gateway kuyruğu",api_gateway.queue)
 
 });
 

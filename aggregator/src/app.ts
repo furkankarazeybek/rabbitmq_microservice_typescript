@@ -12,6 +12,7 @@ async function connectRabbitMQ() {
     if (msg !== null) {
       const { param } = JSON.parse(msg.content.toString()); 
       const correlationId = msg.properties.correlationId; // gelen mesajdaki corelation id yi alır
+      console.log("api gatewayden gelen corelation id", correlationId);
 
       let response;
       if (param === 'getUserList') {
@@ -20,29 +21,34 @@ async function connectRabbitMQ() {
         response = await sendToService('product', { param });
       }
 
-      channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), { // sendToService'ten dönen yanıtı replyTo kuyruğuna gönderir
+      channel.sendToQueue(
+        msg.properties.replyTo, Buffer.from(JSON.stringify(response)), { // sendToService'ten dönen yanıtı aggregator'ın replyTo kuyruğuna gönderir. yani api-gateway'e gider
         correlationId,
       });
-      console.log("user-service'e giden",msg.properties.replyTo)
-
+      console.log("api-gatewaye yanıt döner",msg.properties.replyTo);
       channel.ack(msg);
     }
   });
 }
 
 async function sendToService(queue: string, message: object) {
-  const responseQueue = await channel.assertQueue('', { exclusive: true }); //geçici yanıt kuyruğu
+  const aggregator = await channel.assertQueue('', { exclusive: true }); //geçici yanıt kuyruğu
   const correlationId = generateUuid(); 
 
   return new Promise((resolve) => { // promise, yanıt alındığında çözümlenecek
-    channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { // kuyruğu göndericek replyTo: göndereceği kuyruk
+    channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { // mesajı göndereceği kuyruk göndericek queue = user veya product
       correlationId,
-      replyTo: responseQueue.queue,
+      replyTo: aggregator.queue,
     });
-    console.log("Api-gatewayden gelen",responseQueue.queue);
+
+    console.log("queue(user veya product) kuyruğuna yanıt kuyruğu gönderilir reply to:", aggregator.queue);
+    console.log("agregatordan mesaj buraya gönderilir", queue);  // queue: user veya product
+
+
+    
 
     channel.consume( //gelen kuyruk yanıtını burdan alıyor
-      responseQueue.queue,
+      aggregator.queue,
       (msg) => {
         if(msg == null) {
             return;

@@ -19,7 +19,7 @@ async function connectRabbitMQ() {
         channel.sendToQueue(msg.properties.replyTo, Buffer.from(JSON.stringify(response)), {
           correlationId,
         });
-        console.log("Aggregatordan gelen",msg.properties.replyTo)
+        console.log("mesaj aggregatora gider",msg.properties.replyTo)
         
       }
 
