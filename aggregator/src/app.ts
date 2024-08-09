@@ -13,11 +13,13 @@ async function connectRabbitMQ() {
 
   channel.consume('api_gateway_request', async (msg) => { 
     if (msg !== null) {
-      const { param } = JSON.parse(msg.content.toString());
+      let { param } = JSON.parse(msg.content.toString());
       const correlationId = msg.properties.correlationId;
       console.log("Param değeri ",param);
 
       const routeName = routeConfig.find(route => route.actionName === param);
+
+     
 
       if (routeName) {
         const response: any = await sendToService(routeName.serviceName, { param });
@@ -28,7 +30,14 @@ async function connectRabbitMQ() {
           const userList = response.data; 
           console.log("User list", userList);
 
+          // if (routeName && routeName.route.length > 1) {
+          //   const firstRoute = routeName.route[1];
+          //   const productList = firstRoute.split('.')[1];
+            
+          //   console.log("Product list metod:", productList);
+          // }
       
+
           const productListResponse: any = await sendToService("product", { param: "getProductList" });
           console.log("Product list response", productListResponse);
       
