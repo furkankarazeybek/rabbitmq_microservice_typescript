@@ -1,11 +1,10 @@
 import amqp from 'amqplib';
-import routeConfig from "../route-config"
+import routeConfig from "../route-config";
 
 const RABBITMQ_URL = 'amqp://localhost';
 
 let channel: amqp.Channel;
 const responseHandlers = new Map<string, (response: any) => void>();
-
 
 async function connectRabbitMQ() {
   const connection = await amqp.connect(RABBITMQ_URL);
@@ -16,19 +15,38 @@ async function connectRabbitMQ() {
     if (msg !== null) {
       const { param } = JSON.parse(msg.content.toString());
       const correlationId = msg.properties.correlationId;
+      console.log("Param değeri ",param);
 
-      // routeConfig'te param'a karşılık gelen serviceName'i bulalım
-      const route = routeConfig.find((route:any) => route.actionName === param);
+      const routeName = routeConfig.find(route => route.actionName === param);
 
-      if (route) {
-        const response = await sendToService(route.serviceName, { param });
-        channel.sendToQueue(
-          'api_gateway', 
-          Buffer.from(JSON.stringify(response)), 
-          { correlationId }
-        );
+      if (routeName) {
+        const response: any = await sendToService(routeName.serviceName, { param });
+        console.log("Response değeri", response);
+      
+        if (param === 'getUserList') {
+          console.log("getUserList eşit");
+          const userList = response.data; 
+          console.log("User list", userList);
+
+      
+          const productListResponse: any = await sendToService("product", { param: "getProductList" });
+          console.log("Product list response", productListResponse);
+      
+          const mergedResponse = userList.map((user: any) => ({
+            ...user,
+            products: productListResponse?.filter((product: any) => user?.productIds?.includes(product.id))
+          }));
+
+          console.log("Merged response",mergedResponse);
+      
+          channel.sendToQueue(
+            'api_gateway', 
+            Buffer.from(JSON.stringify(mergedResponse)), 
+            { correlationId }
+          );
+        } 
       }
-
+      
       channel.ack(msg);
     }
   });
@@ -37,8 +55,7 @@ async function connectRabbitMQ() {
 async function sendToService(queue: string, message: object) {
   return new Promise((resolve) => {
     const correlationId = generateUuid();
-    // resolve fonksiyonunu correlationId ile birlikte responseHandlers Map'i eklenir
-    const deger = responseHandlers.set(correlationId, resolve);
+    responseHandlers.set(correlationId, resolve);
 
     channel.assertQueue('aggregator', { durable: false });
 
@@ -46,18 +63,15 @@ async function sendToService(queue: string, message: object) {
       correlationId,
     });
 
-    console.log("Mesaj buraya gönderildi:", queue);
-
     channel.consume(
       "aggregator",
       (msg) => {
         if (msg !== null) {
-          const correlationId = msg.properties.correlationId;
-          const handler = responseHandlers.get(correlationId);
+          const handler = responseHandlers.get(msg.properties.correlationId);
 
           if (handler) { 
-            handler(JSON.parse(msg.content.toString()));  // Bu handler aslında resolve fonksiyonu. resolve çağırıldığında promise tamamlanmış oldu.
-            responseHandlers.delete(correlationId); // reponnseHandler isimli mapten correlationId'yi siliyoruz
+            handler(JSON.parse(msg.content.toString())); 
+            responseHandlers.delete(msg.properties.correlationId);
             channel.ack(msg);
           }
         }
@@ -66,7 +80,6 @@ async function sendToService(queue: string, message: object) {
     );
   });
 }
-
 
 function generateUuid() {
   return Math.random().toString() + Math.random().toString() + Math.random().toString();
