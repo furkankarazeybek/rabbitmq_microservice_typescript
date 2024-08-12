@@ -21,13 +21,25 @@ async function connectRabbitMQ() {
         });
       }
 
+      else if(param === "getProductCategoriesList") {
+        const response = getProductCategoriesList();
+        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(response)), {
+          correlationId,
+        });
+      }
+
       channel.ack(msg);
     }
   });
 }
 
 function getProductList() {
-  return [{ id: 1, name: 'Product A' }, { id: 2, name: 'Product B' }];
+  return [{ id: 1, name: 'Product A',  productCategoryId: [1] }, { id: 2, name: 'Product B',  productCategoryId: [2] }];
+}
+
+
+function getProductCategoriesList() {
+  return [{ id: 1, categoryName: 'Electronics' }, { id: 2, categoryName: 'Entertainment' }];
 }
 
 connectRabbitMQ();
