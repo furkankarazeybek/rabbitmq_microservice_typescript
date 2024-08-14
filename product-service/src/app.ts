@@ -13,10 +13,10 @@ async function connectRabbitMQ() {
 
   channel.consume('product.getProductList', (msg) => { 
     if (msg !== null) {
-      const { routeIndex } = JSON.parse(msg.content.toString());
-      const { param } = JSON.parse(msg.content.toString());
-      console.log(param);
-      console.log("Userservice route index",routeIndex);
+      let { routeIndex } = JSON.parse(msg.content.toString());
+      routeIndex++;
+
+      console.log("product route index after incresed",routeIndex);
       const correlationId = msg.properties.correlationId;
 
       const response = getProductList();

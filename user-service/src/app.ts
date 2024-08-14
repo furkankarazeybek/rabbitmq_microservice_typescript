@@ -14,14 +14,27 @@ async function connectRabbitMQ() {
   channel.consume('user.getUserList', (msg) => { 
     if (msg !== null) {
       console.log("user mesaj", JSON.parse(msg.content.toString()));
-      const { routeIndex } = JSON.parse(msg.content.toString());
-      const { param } = JSON.parse(msg.content.toString());
-      console.log(param);
-      console.log("Userservice route index",routeIndex);
+      let parsedMessage = JSON.parse(msg.content.toString());
+
+      let routeIndex = parsedMessage.response.routeIndex;
+      routeIndex++;
+      console.log("Userservice route index after increased",routeIndex );
       const correlationId = msg.properties.correlationId;
 
+      const products = parsedMessage.response.response;
+      console.log("Products:", products);
+  
+      products.forEach((product: any) => {
+        console.log(`Product ID: ${product.id}`);
+        console.log(`Product Name: ${product.name}`);
+        console.log(`Product Category IDs: ${product.productCategoryId.join(', ')}`);
+      });
+      
+      
       const response = getUserList();
-      channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({  response, routeIndex })), {
+      const message = { response, routeIndex };
+
+      channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(message)), {
         correlationId,
       });
 

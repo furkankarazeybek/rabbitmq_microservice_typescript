@@ -1,5 +1,5 @@
 import amqp from 'amqplib';
-import routeConfig from '../route-config';
+import routeConfig from "../route-config";
 
 const RABBITMQ_URL = 'amqp://localhost';
 
@@ -17,66 +17,84 @@ async function connectRabbitMQ() {
       const msgContent = JSON.parse(msg.content.toString());
       const param: string = msgContent.param;
       const correlationId = msg.properties.correlationId;
-      let routeIndex: number = 0;
 
-      const routeRaw = routeConfig.find(r => r.actionName === param);
 
-      console.log("Routeraw", routeRaw);
+        const response: any = await sendToService(correlationId, param, { msgContent});
 
-      if (routeRaw) {
-        const currentQueue = routeRaw.route[routeIndex];
+        console.log("apigateway request response", response);
 
-        // Servisi çağır
-        const response: any = await sendToService(currentQueue, { ...msgContent, routeIndex });
+        console.log("route raw")
 
-        // Sonucu bir sonraki adım için ilet
-        if (routeIndex + 1 < routeRaw.route.length) {
-          routeIndex += 1;
-          const nextQueue = routeRaw.route[routeIndex];
-          channel.sendToQueue(nextQueue, Buffer.from(JSON.stringify({ ...msgContent, routeIndex })), { correlationId });
-        }
+        // const message : {} = {
+        //   routeIndex: 0,
+        //   action: "method ismi",
+        //   resultStack: {
+        //   }
+        // }; 
 
-        // Sonuçları API Gateway'e gönder
+      
         channel.sendToQueue(
           'api_gateway',
           Buffer.from(JSON.stringify({ param, response })),
           { correlationId }
         );
-      }
+        
+    
 
       channel.ack(msg);
     }
   });
 }
 
-async function sendToService(queue: string, message: object) {
+async function sendToService(correlationId:string, param:string,  message: object) {
   return new Promise((resolve) => {
-    const correlationId = generateUuid();
     responseHandlers.set(correlationId, resolve);
+    
+    let routeIndex: number = 0; // routeIndex başlangıç olarak 0
 
-    channel.assertQueue(queue, { durable: false });
-    channel.sendToQueue(queue, Buffer.from(JSON.stringify(message)), { correlationId });
+    const routeRaw = routeConfig.find(r => r.actionName === param);
 
-    channel.consume(
-      'aggregator',
-      (msg) => {
-        if (msg !== null) {
-          const msgContent = JSON.parse(msg.content.toString());
-          const handler = responseHandlers.get(msg.properties.correlationId);
-          if (handler) {
-            handler(msgContent);
-            responseHandlers.delete(msg.properties.correlationId);
-            channel.ack(msg);
+    if (routeRaw) {
+      const currentQueue = routeRaw.route[routeIndex];
+      channel.assertQueue(currentQueue, { durable: false });
+
+      // İlk mesajı gönderiyoruz
+      channel.sendToQueue(currentQueue, Buffer.from(JSON.stringify({ ...message, routeIndex })), { correlationId });
+
+      console.log("Routeraw", routeRaw);
+
+      channel.consume(
+        'aggregator',
+        (msg) => {
+          if (msg !== null) {
+            const handler = responseHandlers.get(msg.properties.correlationId);
+            if (handler) {
+              const response = JSON.parse(msg.content.toString());
+              handler(response);
+
+              console.log("RESPONSE INDEX", response.routeIndex);
+              const responseIndex : number = response.routeIndex;
+            
+
+              if (routeIndex < routeRaw.route.length) {
+                const newQueue = routeRaw.route[responseIndex];
+                console.log("ROUTE INDEX", routeIndex);
+
+                // Artırılmış routeIndex ile yeni mesajı gönderiyoruz
+                channel.sendToQueue(newQueue, Buffer.from(JSON.stringify({ response })), { correlationId });
+              }
+
+              responseHandlers.delete(msg.properties.correlationId);
+              channel.ack(msg);
+            }
           }
-        }
-      },
-      { noAck: false }
-    );
+        },
+        { noAck: false }
+      );
+    }
   });
 }
 
-function generateUuid() {
-  return Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-}
+
 
 connectRabbitMQ();
