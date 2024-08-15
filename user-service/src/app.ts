@@ -10,29 +10,23 @@ async function connectRabbitMQ() {
   channel.assertQueue('user.getUserList', { durable: false });
   channel.assertQueue('user.getRoleList', { durable: false });
 
-
   channel.consume('user.getUserList', (msg) => { 
     if (msg !== null) {
       console.log("user mesaj", JSON.parse(msg.content.toString()));
-      let parsedMessage = JSON.parse(msg.content.toString());
+      const parsedMessage = JSON.parse(msg.content.toString());
 
-      let routeIndex = parsedMessage.response.routeIndex;
+      let { routeIndex } = parsedMessage;
       routeIndex++;
-      console.log("Userservice route index after increased",routeIndex );
-      const correlationId = msg.properties.correlationId;
+      console.log("Userservice route index after increased", routeIndex);
 
+      const correlationId = msg.properties.correlationId;
       const products = parsedMessage.response.response;
-      console.log("Products:", products);
-  
-      products.forEach((product: any) => {
-        console.log(`Product ID: ${product.id}`);
-        console.log(`Product Name: ${product.name}`);
-        console.log(`Product Category IDs: ${product.productCategoryId.join(', ')}`);
-      });
-      
-      
-      const response = getUserList();
-      const message = { response, routeIndex };
+
+      const usersWithProducts = getUserListWithProducts(products);
+
+      console.log("User service with products",usersWithProducts);
+
+      const message = { response: usersWithProducts, routeIndex };
 
       channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(message)), {
         correlationId,
@@ -44,12 +38,13 @@ async function connectRabbitMQ() {
 
   channel.consume('user.getRoleList', (msg) => { 
     if (msg !== null) {
-      const { routeIndex } = JSON.parse(msg.content.toString());
+      let { routeIndex } = JSON.parse(msg.content.toString());
       const { param } = JSON.parse(msg.content.toString());
       console.log(param);
-      const correlationId = msg.properties.correlationId;
 
+      const correlationId = msg.properties.correlationId;
       const response = getRoleList();
+      
       channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ response, routeIndex })), {
         correlationId,
       });
@@ -66,8 +61,21 @@ function getUserList() {
   ];
 }
 
+
 function getRoleList() {
   return [{ id: 1, role: 'Admin' }, { id: 2, role: 'User' }];
+}
+
+
+function getUserListWithProducts(products: any[]) {
+  const users = getUserList();
+  return users.map(user => {
+    const userProducts = user.productIds.map(productId => {
+      return products.find(product => product.id === productId);
+    }).filter(product => product !== undefined);
+
+    return { ...user, products: userProducts };
+  });
 }
 
 connectRabbitMQ();

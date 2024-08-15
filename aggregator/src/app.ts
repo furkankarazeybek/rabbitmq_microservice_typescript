@@ -5,6 +5,7 @@ const RABBITMQ_URL = 'amqp://localhost';
 
 let channel: amqp.Channel;
 const responseHandlers = new Map<string, (response: any) => void>();
+const responseStacks = new Map<string, any[]>(); // To store response stacks
 
 async function connectRabbitMQ() {
   const connection = await amqp.connect(RABBITMQ_URL);
@@ -18,83 +19,92 @@ async function connectRabbitMQ() {
       const param: string = msgContent.param;
       const correlationId = msg.properties.correlationId;
 
-
-        const response: any = await sendToService(correlationId, param, { msgContent});
-
-        console.log("apigateway request response", response);
-
-        console.log("route raw")
-
-        // const message : {} = {
-        //   routeIndex: 0,
-        //   action: "method ismi",
-        //   resultStack: {
-        //   }
-        // }; 
-
-      
+      try {
+        const response: any = await sendToService(correlationId, param, { msgContent });
+        //route 0 index 
+        console.log("API Gateway request response", response);
+        
         channel.sendToQueue(
           'api_gateway',
           Buffer.from(JSON.stringify({ param, response })),
           { correlationId }
         );
-        
-    
+      } catch (error) {
+        console.error("Error handling API Gateway request:", error);
+      }
 
       channel.ack(msg);
     }
   });
 }
 
-async function sendToService(correlationId:string, param:string,  message: object) {
-  return new Promise((resolve) => {
-    responseHandlers.set(correlationId, resolve);
-    
-    let routeIndex: number = 0; // routeIndex başlangıç olarak 0
+async function sendToService(correlationId: string, param: string, message: object) {
+  return new Promise((resolve, reject) => {
+    responseHandlers.set(correlationId, (response: any) => {
+      responseHandlers.delete(correlationId); // Clean up the handler
+      resolve(response); // Resolve with the final response
+    });
 
+    let routeIndex: number = 0;
     const routeRaw = routeConfig.find(r => r.actionName === param);
 
     if (routeRaw) {
       const currentQueue = routeRaw.route[routeIndex];
       channel.assertQueue(currentQueue, { durable: false });
 
-      // İlk mesajı gönderiyoruz
       channel.sendToQueue(currentQueue, Buffer.from(JSON.stringify({ ...message, routeIndex })), { correlationId });
 
-      console.log("Routeraw", routeRaw);
+      console.log("Route Raw", routeRaw);
 
-      channel.consume(
-        'aggregator',
-        (msg) => {
-          if (msg !== null) {
-            const handler = responseHandlers.get(msg.properties.correlationId);
-            if (handler) {
-              const response = JSON.parse(msg.content.toString());
-              handler(response);
+      channel.consume('aggregator', async (msg) => {
+        if (msg !== null) {
+          const response = JSON.parse(msg.content.toString());
+          const responseIndex: number = response.routeIndex;
 
-              console.log("RESPONSE INDEX", response.routeIndex);
-              const responseIndex : number = response.routeIndex;
-            
+          let responseStack = responseStacks.get(correlationId) || [];
+          responseStack.push(response);
+          responseStacks.set(correlationId, responseStack);
 
-              if (routeIndex < routeRaw.route.length) {
-                const newQueue = routeRaw.route[responseIndex];
-                console.log("ROUTE INDEX", routeIndex);
+          console.log("Received response:", response);
+          console.log("Response Index:", responseIndex);
 
-                // Artırılmış routeIndex ile yeni mesajı gönderiyoruz
-                channel.sendToQueue(newQueue, Buffer.from(JSON.stringify({ response })), { correlationId });
-              }
+          if (responseIndex  < routeRaw.route.length) {
+            const newQueue = routeRaw.route[responseIndex];
+            console.log("Next Route Index:", responseIndex);
 
-              responseHandlers.delete(msg.properties.correlationId);
-              channel.ack(msg);
-            }
+            channel.sendToQueue(newQueue, Buffer.from(JSON.stringify({ response, routeIndex: responseIndex })), { correlationId });
+          } else {
+            processFinalResponse(correlationId).then(resolve).catch(reject);
           }
-        },
-        { noAck: false }
-      );
+
+          channel.ack(msg);
+        }
+      },
+      { noAck: false });
+
+
+    } else {
+      reject(new Error(`No route configuration found for action: ${param}`));
     }
   });
 }
 
+async function processFinalResponse(correlationId: string) {
+  return new Promise((resolve, reject) => {
+    const responseStack = responseStacks.get(correlationId);
+    if (responseStack) {
+      console.log("Processing final response for correlationId:", correlationId);
+      console.log("Final response stack:", responseStack);
 
+      const finalResponse = responseStack[responseStack.length - 1];
+
+      responseStacks.delete(correlationId);
+      
+      resolve(finalResponse);
+    } else {
+      reject(new Error(`No response stack found for correlationId: ${correlationId}`));
+    }
+  });
+}
 
 connectRabbitMQ();
