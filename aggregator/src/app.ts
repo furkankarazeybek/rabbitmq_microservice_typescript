@@ -41,8 +41,8 @@ async function connectRabbitMQ() {
 async function sendToService(correlationId: string, param: string, message: object) {
   return new Promise((resolve, reject) => {
     responseHandlers.set(correlationId, (response: any) => {
-      responseHandlers.delete(correlationId); // Clean up the handler
-      resolve(response); // Resolve with the final response
+      responseHandlers.delete(correlationId); 
+      resolve(response); 
     });
 
     let routeIndex: number = 0;
