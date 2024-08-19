@@ -24,11 +24,12 @@ async function connectRabbitMQ() {
 
         const correlationId = msg.properties.correlationId;
 
-        if (!parsedMessage.response) {
+        console.log("PARSED MESSAGE", parsedMessage);
+        if (!parsedMessage) {
           throw new Error("Response property is missing in the message");
         }
 
-        const productCategories = parsedMessage.response.response;
+        const productCategories = getProductCategoriesList();
         console.log("Product categories:", productCategories);
 
         const products = getProductList();
@@ -36,9 +37,21 @@ async function connectRabbitMQ() {
 
         const response = getProductListWithCategories(products, productCategories);
 
+        parsedMessage.resultStack.getProductListResult = response;
+
         console.log("Products with categories:", response);
 
-        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ response, routeIndex })), {
+        const message : {} = {
+          correlationId: parsedMessage.correlationId,
+          param: parsedMessage.param,
+          msgContent: parsedMessage.msgContent,
+          routeIndex: parsedMessage.routeIndex,
+          resultStack: parsedMessage.resultStack
+        }
+
+        console.log("YENİ PRODUCT MESAJ", message);
+
+        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ message })), {
           correlationId,
         });
 

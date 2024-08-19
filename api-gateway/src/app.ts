@@ -16,6 +16,7 @@ async function connectRabbitMQ() {
   channel = await connection.createChannel();
   await channel.assertQueue("api_gateway", { durable: false });
 
+  //api-gateway response
   channel.consume("api_gateway", (msg) => {
     if (msg !== null) {
       const correlationId = msg.properties.correlationId;
@@ -41,10 +42,14 @@ app.post('/api', async (req, res) => {
     res.json(response);
   });
 
+  const message = {
+    param: param,
+    correlationId: correlationId
+  }
+
   channel.sendToQueue(
     'api_gateway_request',
-    Buffer.from(JSON.stringify({ param })),
-    { correlationId}
+    Buffer.from(JSON.stringify( message ))
   );
 });
 
