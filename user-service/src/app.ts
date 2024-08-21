@@ -52,14 +52,27 @@ async function connectRabbitMQ() {
 
   channel.consume('user.getRoleList', (msg) => { 
     if (msg !== null) {
-      let { routeIndex } = JSON.parse(msg.content.toString());
+      const parsedMessage = JSON.parse(msg.content.toString());
       const { param } = JSON.parse(msg.content.toString());
       console.log(param);
 
       const correlationId = msg.properties.correlationId;
-      const response = getRoleList();
+      const roleList = getRoleList();
+
+      parsedMessage.resultStack.getRoleListResult = roleList;
+
+      parsedMessage.routeIndex++;
+
+      const message : {} = {
+        correlationId: parsedMessage.correlationId,
+        param: parsedMessage.param,
+        msgContent: parsedMessage.msgContent,
+        routeIndex: parsedMessage.routeIndex,
+        resultStack: parsedMessage.resultStack
+      }
+
       
-      channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ response, routeIndex })), {
+      channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ message })), {
         correlationId,
       });
 

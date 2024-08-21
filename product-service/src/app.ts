@@ -60,29 +60,38 @@ async function connectRabbitMQ() {
   });
 
   channel.consume('product.getProductCategoriesList', (msg) => { 
-    if (msg !== null) {
-      try {
+
+      if (msg !== null) {
         const parsedMessage = JSON.parse(msg.content.toString());
-        console.log("Received message for product.getProductCategoriesList:", parsedMessage);
-
-        let { routeIndex } = parsedMessage;
-
-        console.log("Product categories index after increased:", routeIndex);
-
+  
+        const { param } = JSON.parse(msg.content.toString());
+        console.log(param);
+  
         const correlationId = msg.properties.correlationId;
-
-        const response = getProductCategoriesList();
-        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ response, routeIndex })), {
+        const categoriesList = getProductCategoriesList();
+  
+        parsedMessage.resultStack.getProductCategoriesResult = categoriesList;
+  
+        parsedMessage.routeIndex++;
+  
+        const message : {} = {
+          correlationId: parsedMessage.correlationId,
+          param: parsedMessage.param,
+          msgContent: parsedMessage.msgContent,
+          routeIndex: parsedMessage.routeIndex,
+          resultStack: parsedMessage.resultStack
+        }
+  
+        
+        channel.sendToQueue("aggregator", Buffer.from(JSON.stringify({ message })), {
           correlationId,
         });
-
+  
         channel.ack(msg);
-      } catch (error) {
-        console.error("Error processing message:", error);
       }
-    }
-  });
-}
+    });
+  }
+
 
 function getProductList() {
   return [{ id: 1, name: 'Product A', productCategoryId: [1] }, { id: 2, name: 'Product B', productCategoryId: [2] }];

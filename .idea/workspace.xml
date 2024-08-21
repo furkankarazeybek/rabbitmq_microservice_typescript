@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="39d1aa8e-9015-4839-abfb-46ff92fb5434" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/micro-3.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/aggregator/route-config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/aggregator/route-config.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aggregator/src/app.ts" beforeDir="false" afterPath="$PROJECT_DIR$/aggregator/src/app.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api-gateway/src/app.ts" beforeDir="false" afterPath="$PROJECT_DIR$/api-gateway/src/app.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/product-service/src/app.ts" beforeDir="false" afterPath="$PROJECT_DIR$/product-service/src/app.ts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/user-service/src/app.ts" beforeDir="false" afterPath="$PROJECT_DIR$/user-service/src/app.ts" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;customColor&quot;: &quot;&quot;,
+  &quot;associatedIndex&quot;: 1
+}</component>
+  <component name="ProjectId" id="2kuSzMWmhE7SUQftPG6veLZAk5S" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Node.js.aggregator.executor": "Debug",
+    "Node.js.api-gateway.executor": "Run",
+    "Node.js.product-service.executor": "Run",
+    "Node.js.user-service.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "ts.external.directory.path": "/Users/furkankarazeybek/Desktop/microservice/micro-3/api-gateway/node_modules/typescript/lib",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RunManager" selected="Compound.Server">
+    <configuration name="Server" type="CompoundRunConfigurationType">
+      <toRun name="aggregator" type="NodeJSConfigurationType" />
+      <toRun name="api-gateway" type="NodeJSConfigurationType" />
+      <toRun name="product-service" type="NodeJSConfigurationType" />
+      <toRun name="user-service" type="NodeJSConfigurationType" />
+      <method v="2" />
+    </configuration>
+    <configuration name="aggregator" type="NodeJSConfigurationType" node-parameters="--require ts-node/register" path-to-js-file="app.ts" working-dir="$PROJECT_DIR$/aggregator/src">
+      <method v="2" />
+    </configuration>
+    <configuration name="api-gateway" type="NodeJSConfigurationType" node-parameters="--require ts-node/register" path-to-js-file="app.ts" working-dir="$PROJECT_DIR$/api-gateway/src">
+      <method v="2" />
+    </configuration>
+    <configuration name="product-service" type="NodeJSConfigurationType" node-parameters="--require ts-node/register" path-to-js-file="app.ts" working-dir="$PROJECT_DIR$/product-service/src">
+      <method v="2" />
+    </configuration>
+    <configuration name="user-service" type="NodeJSConfigurationType" node-parameters="--require ts-node/register" path-to-js-file="app.ts" working-dir="$PROJECT_DIR$/user-service/src">
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Compound.Server" />
+      <item itemvalue="Node.js.aggregator" />
+      <item itemvalue="Node.js.user-service" />
+      <item itemvalue="Node.js.api-gateway" />
+      <item itemvalue="Node.js.product-service" />
+    </list>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-410509235cf1-JavaScript-WS-242.20224.342" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="39d1aa8e-9015-4839-abfb-46ff92fb5434" name="Changes" comment="" />
+      <created>1724132230557</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1724132230557</updated>
+      <workItem from="1724132232070" duration="22499000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/api-gateway/src/app.ts</url>
+          <line>54</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="21" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>17</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="23" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/user-service/src/app.ts</url>
+          <line>29</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="25" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/product-service/src/app.ts</url>
+          <line>50</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="30" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>22</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="33" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>37</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="34" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/user-service/src/app.ts</url>
+          <line>44</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="40" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>77</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="43" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>83</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="44" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>99</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="45" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/aggregator/src/app.ts</url>
+          <line>107</line>
+          <properties lambdaOrdinal="-1" />
+          <option name="timeStamp" value="46" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
