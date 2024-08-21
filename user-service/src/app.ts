@@ -18,15 +18,20 @@ async function connectRabbitMQ() {
       console.log("PARSED MESSAGE", parsedMessage);
 
 
-      parsedMessage.routeIndex++;
       console.log("Userservice route index after increased");
 
       const correlationId = msg.properties.correlationId;
-      const productList = parsedMessage.resultStack.getProductResultList;
+      const productList = parsedMessage.resultStack.getProductListResult;
+      
+      console.log("PRODUCT LIST",productList);
 
       const usersWithProducts = getUserListWithProducts(productList);
 
       console.log("User service with products",usersWithProducts);
+
+      parsedMessage.resultStack.getUserListResult = usersWithProducts;
+
+      parsedMessage.routeIndex++;
 
       const message : {} = {
         correlationId: parsedMessage.correlationId,
@@ -36,6 +41,7 @@ async function connectRabbitMQ() {
         resultStack: parsedMessage.resultStack
       }
       
+
       channel.sendToQueue("aggregator", Buffer.from(JSON.stringify(message)), {
         correlationId,
       });
@@ -65,7 +71,9 @@ async function connectRabbitMQ() {
 function getUserList() {
   return [
     { id: 1, name: 'John Doe', productIds: [1, 2] }, 
-    { id: 2, name: 'Jane Doe', productIds: [2] }
+    { id: 2, name: 'Jane Doe', productIds: [2] },
+    { id: 3, name: 'Jale Doe', productIds: [1] }
+
   ];
 }
 

@@ -5,10 +5,10 @@ interface RouteConfig {
   }
   
   const routeConfig: RouteConfig[] = [
-    { actionName: 'getUserList', route: ["product.getProductList","user.getUserList"], finalResult: "user.getUserList" },
-    { actionName: 'getRoleList', route: ["user.getRoleList"], finalResult: "user.getRoleList"},
+    { actionName: 'getUserList', route: ["product.getProductList","user.getUserList"], finalResult: "getUserListResult" },
+    { actionName: 'getRoleList', route: ["user.getRoleList"], finalResult: ""},
     { actionName: 'getProductList', route: ["product.getProductList"], finalResult: "getProductListResult" },
-    { actionName: 'getProductCategoriesList', route: ["product.getProductCategoriesList"], finalResult: "product.getProductCategoriesList"  }
+    { actionName: 'getProductCategoriesList', route: ["product.getProductCategoriesList"], finalResult: ""  }
   ];
   
   export default routeConfig;

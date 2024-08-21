@@ -24,8 +24,9 @@ async function connectRabbitMQ() {
       if (handler) {
         handler(JSON.parse(msg.content.toString()));  // buffer veriyi alıp json parse ettikten sonra correlation id silinir
         responseHandlers.delete(correlationId);
-        channel.ack(msg);
       }
+      channel.ack(msg);
+
     }
   }, { noAck: false });
 }
@@ -35,7 +36,7 @@ app.post('/api', async (req, res) => {
   const { param } = req.body;
   const correlationId = generateUuid();
   
-  console.log("Response hadnler",responseHandlers);
+  console.log("Response handler",responseHandlers);
 
   responseHandlers.set(correlationId, (response) => {
     console.log("api gateway response",response);

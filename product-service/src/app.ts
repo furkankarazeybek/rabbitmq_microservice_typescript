@@ -17,11 +17,6 @@ async function connectRabbitMQ() {
 
         console.log("Received message for product.getProductList:", parsedMessage);
 
-        let { routeIndex } = parsedMessage;
-        routeIndex++;
-
-        console.log("Product service route index after increased:", routeIndex);
-
         const correlationId = msg.properties.correlationId;
 
         console.log("PARSED MESSAGE", parsedMessage);
@@ -40,6 +35,8 @@ async function connectRabbitMQ() {
         parsedMessage.resultStack.getProductListResult = response;
 
         console.log("Products with categories:", response);
+
+        parsedMessage.routeIndex++;
 
         const message : {} = {
           correlationId: parsedMessage.correlationId,
@@ -69,7 +66,7 @@ async function connectRabbitMQ() {
         console.log("Received message for product.getProductCategoriesList:", parsedMessage);
 
         let { routeIndex } = parsedMessage;
-        routeIndex++;
+
         console.log("Product categories index after increased:", routeIndex);
 
         const correlationId = msg.properties.correlationId;
